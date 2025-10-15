@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fasting Calendar Oct 2025 - Oct 2026</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; background: #0b0c10; color: #eee; }
+  h1, h2 { text-align: center; color: #fff; }
+  table { border-collapse: collapse; margin: 20px auto; width: 90%; }
+  th, td { border: 1px solid #333; width: 14.28%; height: 80px; vertical-align: top; padding: 5px; }
+  th { background-color: #1f2833; color: #fff; }
+  .fast48 { background-color: #ff4d6d; color: #fff; font-weight: bold; } /* bright pink */
+  .fast72 { background-color: #6a0572; color: #fff; font-weight: bold; } /* dark purple */
+  .extra1 { background-color: #28df99; color: #000; font-weight: bold; } /* extra eating day after 48-hr fast */
+  .extra2 { background-color: #00bfff; color: #000; font-weight: bold; } /* extra eating days after 72-hr fast */
+  .day-number { font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>Fasting & Recovery Calendar: Oct 2025 – Oct 2026</h1>
+
+<div id="calendar"></div>
+
+<script>
+// Astronomically accurate New Moon and Solstice/Equinox dates
+const fastsRaw = [
+  {start: '2025-10-21', type: '48'}, // New Moon
+  {start: '2025-11-20', type: '48'}, // New Moon
+  {start: '2025-12-19', type: '48'}, // New Moon
+  {start: '2025-12-21', type: '72'}, // Winter Solstice
+  {start: '2026-01-18', type: '48'}, // New Moon
+  {start: '2026-02-17', type: '48'}, // New Moon
+  {start: '2026-03-18', type: '48'}, // New Moon
+  {start: '2026-03-20', type: '72'}, // Spring Equinox
+  {start: '2026-04-17', type: '48'}, // New Moon
+  {start: '2026-05-16', type: '48'}, // New Moon
+  {start: '2026-06-14', type: '48'}, // New Moon
+  {start: '2026-06-21', type: '72'}, // Summer Solstice
+  {start: '2026-07-13', type: '48'}, // New Moon
+  {start: '2026-08-11', type: '48'}, // New Moon
+  {start: '2026-09-09', type: '48'}, // New Moon
+  {start: '2026-09-23', type: '72'}, // Autumn Equinox
+  {start: '2026-10-09', type: '48'}  // New Moon
+];
+
+// Convert string to Date
+function toDate(str) { return new Date(str + 'T00:00:00'); }
+
+// Skip 48-hour fasts within ±14 days of any 72-hour fast
+const fasts = [];
+const fast72Dates = fastsRaw.filter(f => f.type==='72').map(f => toDate(f.start));
+for (let f of fastsRaw) {
+  if (f.type==='48') {
+    let skip = fast72Dates.some(d72 => Math.abs((toDate(f.start)-d72)/(1000*60*60*24))<=14);
+    if (!skip) fasts.push(f);
+  } else fasts.push(f);
+}
+
+// Expand fasts to actual days
+const fastDays = [];
+for (let f of fasts) {
+  const start = toDate(f.start);
+  const days = f.type==='48'?2:3;
+  for (let i=0;i<days;i++) {
+    let d = new Date(start);
+    d.setDate(start.getDate()+i);
+    fastDays.push({date: d.toISOString().split('T')[0], type: f.type});
+  }
+}
+
+// Add extra eating days
+const extraDays = [];
+for (let f of fasts) {
+  const start = toDate(f.start);
+  if(f.type==='48') {
+    let d = new Date(start); d.setDate(d.getDate()+2);
+    extraDays.push({date: d.toISOString().split('T')[0], type:'extra1'});
+  } else if(f.type==='72') {
+    for(let i=3;i<=4;i++){
+      let d = new Date(start); d.setDate(d.getDate()+i);
+      extraDays.push({date: d.toISOString().split('T')[0], type:'extra2'});
+    }
+  }
+}
+
+// Merge fast and extra days
+const allDays = fastDays.concat(extraDays);
+
+// Generate month table
+function generateMonth(year, month){
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month+1, 0);
+  let html = `<h2>${firstDay.toLocaleString('default',{month:'long'})} ${year}</h2>`;
+  html += '<table><tr>';
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  for(let d of days) html += `<th>${d}</th>`;
+  html += '</tr><tr>';
+  
+  for(let i=0;i<firstDay.getDay();i++) html+='<td></td>';
+  
+  for(let day=1;day<=lastDay.getDate();day++){
+    const current = new Date(year,month,day);
+    const dateStr = current.toISOString().split('T')[0];
+    let cls='';
+    for(let d of allDays){
+      if(d.date===dateStr) cls=d.type==='48'?'fast48':d.type==='72'?'fast72':d.type;
+    }
+    html+=`<td class="${cls}"><span class="day-number">${day}</span></td>`;
+    if((current.getDay()+1)%7===0) html+='</tr><tr>';
+  }
+  
+  html+='</tr></table>';
+  return html;
+}
+
+// Render calendar for Oct 2025 to Oct 2026
+const container = document.getElementById('calendar');
+for(let y=2025;y<=2026;y++){
+  const startMonth = y===2025?9:0; // October=9
+  const endMonth = y===2026?9:11;  // October=9
+  for(let m=startMonth;m<=endMonth;m++){
+    container.innerHTML+=generateMonth(y,m);
+  }
+}
+</script>
+
+</body>
+</html>
